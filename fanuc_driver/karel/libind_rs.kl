@@ -180,7 +180,8 @@ BEGIN
 		--   - no errors, HOLD not depressed, drives powered (already checked)
 		--   - deadman depressed
 		--   - shift depressed
-		RETURN (((sstat AND MFS_DEADMAN) = 0) AND (TPIN[ky_shift] = ON))
+		--RETURN (((sstat AND MFS_DEADMAN) = 0) AND (TPIN[ky_shift] = ON))
+		RETURN (((sstat AND MFS_DEADMAN) = 0))
 	ENDIF
 
 	-- following cases are trapped by check on 'in_error_' field:
@@ -239,7 +240,7 @@ BEGIN
 	-- use 'rob_move' system variable to determine if robot is currently
 	-- moving
 	this.in_motion_ = TS_FALSE
-	IF ($MOR_GRP[1].$ROB_MOVE) THEN this.in_motion_ = TS_TRUE; ENDIF
+	IF (NOT $MOR_GRP[1].$FILTER_EMPT) THEN this.in_motion_ = TS_TRUE; ENDIF
 
 	-- use state of FAULT LED as fault indicator, and report most recent error.
 	-- 
@@ -270,6 +271,7 @@ BEGIN
 	ELSE                               this.mtn_psble_ = TS_FALSE; ENDIF
 
 	-- Also: status of the trajectory relay influences 'motion possible'
+	-- TODO: this needs fixing
 	IF ((NOT is_running_('ROS_RELAY')) OR (NOT is_running_('ROS'))) THEN
 		this.mtn_psble_ = TS_FALSE
 	ENDIF

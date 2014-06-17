@@ -69,9 +69,9 @@ PROGRAM libind_log
 --------------------------------------------------------------------------------
 CONST
 	-- use klevccdf constants for colours from rosconsole.cpp
-	ROS_WARN  = cc_yellow
-	ROS_ERR   = cc_red
-	ROS_DEBUG = cc_green
+	--ROS_WARN  = cc_yellow
+	--ROS_ERR   = cc_bold
+	--ROS_DEBUG = cc_green
 
 	-- 
 	ROS_ERR_T   = ' E '
@@ -169,11 +169,11 @@ ROUTINE log_warn
 BEGIN
 	prnt_time_
 	WRITE TPDISPLAY(
-		CHR(cc_bgcolor), CHR(cc_black),
-		CHR(cc_fgcolor), CHR(ROS_WARN),
+		--CHR(cc_bgcolor), CHR(cc_black),
+		--CHR(cc_fgcolor), CHR(ROS_WARN),
 		ROS_WARN_T, msg,
-		CHR(cc_bgcolor), CHR(cc_dfcolor),
-		CHR(cc_fgcolor), CHR(cc_dfcolor),
+		--CHR(cc_bgcolor), CHR(cc_dfcolor),
+		--CHR(cc_fgcolor), CHR(cc_dfcolor),
 		CR)
 END log_warn
 
@@ -184,9 +184,9 @@ ROUTINE log_warn_a
 BEGIN
 	prnt_time_
 	WRITE TPDISPLAY(
-		CHR(cc_fgcolor), CHR(ROS_WARN),
+		--CHR(cc_fgcolor), CHR(ROS_WARN),
 		ROS_WARN_T, msg, prm,
-		CHR(cc_fgcolor), CHR(cc_dfcolor),
+		--CHR(cc_fgcolor), CHR(cc_dfcolor),
 		CR)
 END log_warn_a
 
@@ -197,9 +197,9 @@ ROUTINE log_error
 BEGIN
 	prnt_time_
 	WRITE TPDISPLAY(
-		CHR(cc_fgcolor), CHR(ROS_ERR),
+		--CHR(cc_fgcolor), CHR(ROS_ERR),
 		ROS_ERR_T, msg,
-		CHR(cc_fgcolor), CHR(cc_dfcolor),
+		--CHR(cc_fgcolor), CHR(cc_dfcolor),
 		CR)
 END log_error
 
@@ -210,8 +210,8 @@ ROUTINE log_error_a
 BEGIN
 	prnt_time_
 	WRITE TPDISPLAY(
-		CHR(cc_fgcolor), CHR(ROS_ERR),
+		--CHR(cc_fgcolor), CHR(ROS_ERR),
 		ROS_ERR_T, msg, prm,
-		CHR(cc_fgcolor), CHR(cc_dfcolor),
+		--CHR(cc_fgcolor), CHR(cc_dfcolor),
 		CR)
 END log_error_a

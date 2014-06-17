@@ -60,9 +60,10 @@ PROGRAM ros_relay
 -- 
 --------------------------------------------------------------------------------
 %ALPHABETIZE
-%COMMENT = 'r23'
+%COMMENT = 'r23:krl_moveto'
 %NOBUSYLAMP
-%NOLOCKGROUP
+--%NOLOCKGROUP
+%LOCKGROUP = 1
 %NOPAUSE = COMMAND + TPENABLE + ERROR
 
 
@@ -98,17 +99,19 @@ TYPE
 		s_tcp_nr     : INTEGER  -- TCP port to listen on
 		s_tag_nr     : INTEGER  -- server TAG number to use
 		um_clear     : BOOLEAN  -- clear user menu on start
+		use_tt_cont  : BOOLEAN  -- use TT_CONTINUOU as termination type (default: NODECEL)
 	ENDSTRUCTURE
 
 
 VAR
-	cfg_         IN SHADOW : rrelay_cfg_t   -- configuration
+	cfg_         IN CMOS   : rrelay_cfg_t   -- configuration
 
 	sock_                  : ssock_t
 	sock_fd_               : FILE           -- file descriptor has to be declared here
 	pkt_in_                : ind_pkt_t      -- incoming joint commands
 	pkt_out_               : ind_pkt_t      -- outgoing reply msgs
 	stat_                  : INTEGER
+	stat2_                 : INTEGER
 	sleep_time_            : INTEGER
 	shutdwn_req_           : BOOLEAN        -- program abort requested status
 
@@ -168,7 +171,7 @@ CONST
 ROUTINE check_cfg_(cfg : rrelay_cfg_t) : INTEGER FROM ros_relay
 ROUTINE install_ah_ FROM ros_relay
 ROUTINE remove_ah_ FROM ros_relay
-ROUTINE exec_move_(pkt : ind_pkt_t; cfg : rrelay_cfg_t) : INTEGER FROM ros_relay
+ROUTINE exec_kmove_(pkt : ind_pkt_t; cfg : rrelay_cfg_t) : INTEGER FROM ros_relay
 ROUTINE req_next_(pkt_in : ind_pkt_t; pkt_out : ind_pkt_t; sock_fd : FILE) : INTEGER FROM ros_relay
 ROUTINE send_err_(pkt_in : ind_pkt_t; pkt_out : ind_pkt_t; sock_fd : FILE) : INTEGER FROM ros_relay
 
@@ -195,6 +198,7 @@ BEGIN
 
 	-- init
 	stat_        = 0
+	stat2_       = 0
 	sleep_time_  = ROUND(1000.0 / cfg_.loop_hz)
 	shutdwn_req_ = FALSE
 
@@ -328,14 +332,15 @@ BEGIN
 					ENDIF
 
 					-- 
-					stat_ = exec_move_(pkt_in_, cfg_)
+					stat_ = exec_kmove_(pkt_in_, cfg_)
 					IF (stat_ <> 0) THEN
 						-- 
-						log_error_a(LOG_PFIX + 'exec_move err:', stat_)
+						stat2_ = stat_
+						log_error_a(LOG_PFIX + 'exec_move err:', stat2_)
 						-- can't continue, send error
 						stat_ = send_err_(pkt_in_, pkt_out_, sock_fd_)
 						-- disconnect if anything else than OOR error
-						IF (stat_ <> MOVERR_OOR) THEN
+						IF (stat2_ <> MOVERR_OOR) THEN
 							-- 
 							GOTO exit_discon
 						ENDIF
@@ -385,18 +390,19 @@ BEGIN
 	a__ = FALSE
 
 	-- set defaults for any uninitialised entries
-	IF (UNINIT(cfg.f_msm_rdy )) THEN cfg.f_msm_rdy  = RI_MSM_RDY  ; a__ = TRUE; ENDIF
-	IF (UNINIT(cfg.f_msm_drdy)) THEN cfg.f_msm_drdy = RI_MSM_DRDY ; a__ = TRUE; ENDIF
-	IF (UNINIT(cfg.loop_hz   )) THEN cfg.loop_hz    = LOOP_HZ     ; a__ = TRUE; ENDIF
-	IF (UNINIT(cfg.move_cnt  )) THEN cfg.move_cnt   = MOVE_CNT    ; a__ = TRUE; ENDIF
-	IF (UNINIT(cfg.move_speed)) THEN cfg.move_speed = MOVE_SPEED  ; a__ = TRUE; ENDIF
-	IF (UNINIT(cfg.pr_move   )) THEN cfg.pr_move    = MOVE_PREG   ; a__ = TRUE; ENDIF
-	IF (UNINIT(cfg.r_move_spd)) THEN cfg.r_move_spd = MOVE_SPD_REG; a__ = TRUE; ENDIF
-	IF (UNINIT(cfg.r_move_cnt)) THEN cfg.r_move_cnt = MOVE_CNT_REG; a__ = TRUE; ENDIF
-	IF (UNINIT(cfg.s_tcp_nr  )) THEN cfg.s_tcp_nr   = MOTION_TCP_P; a__ = TRUE; ENDIF
-	IF (UNINIT(cfg.s_tag_nr  )) THEN cfg.s_tag_nr   = MOTION_TAG  ; a__ = TRUE; ENDIF
-	IF (UNINIT(cfg.um_clear  )) THEN cfg.um_clear   = TRUE        ; a__ = TRUE; ENDIF
-	IF (UNINIT(cfg.checked   )) THEN cfg.checked    = FALSE       ; a__ = TRUE; ENDIF
+	IF (UNINIT(cfg.f_msm_rdy  )) THEN cfg.f_msm_rdy   = RI_MSM_RDY  ; a__ = TRUE; ENDIF
+	IF (UNINIT(cfg.f_msm_drdy )) THEN cfg.f_msm_drdy  = RI_MSM_DRDY ; a__ = TRUE; ENDIF
+	IF (UNINIT(cfg.loop_hz    )) THEN cfg.loop_hz     = LOOP_HZ     ; a__ = TRUE; ENDIF
+	IF (UNINIT(cfg.move_cnt   )) THEN cfg.move_cnt    = MOVE_CNT    ; a__ = TRUE; ENDIF
+	IF (UNINIT(cfg.move_speed )) THEN cfg.move_speed  = MOVE_SPEED  ; a__ = TRUE; ENDIF
+	IF (UNINIT(cfg.pr_move    )) THEN cfg.pr_move     = MOVE_PREG   ; a__ = TRUE; ENDIF
+	IF (UNINIT(cfg.r_move_spd )) THEN cfg.r_move_spd  = MOVE_SPD_REG; a__ = TRUE; ENDIF
+	IF (UNINIT(cfg.r_move_cnt )) THEN cfg.r_move_cnt  = MOVE_CNT_REG; a__ = TRUE; ENDIF
+	IF (UNINIT(cfg.s_tcp_nr   )) THEN cfg.s_tcp_nr    = MOTION_TCP_P; a__ = TRUE; ENDIF
+	IF (UNINIT(cfg.s_tag_nr   )) THEN cfg.s_tag_nr    = MOTION_TAG  ; a__ = TRUE; ENDIF
+	IF (UNINIT(cfg.um_clear   )) THEN cfg.um_clear    = TRUE        ; a__ = TRUE; ENDIF
+	IF (UNINIT(cfg.checked    )) THEN cfg.checked     = FALSE       ; a__ = TRUE; ENDIF
+	IF (UNINIT(cfg.use_tt_cont)) THEN cfg.use_tt_cont = FALSE       ; a__ = TRUE; ENDIF
 
 	-- make sure user has checked configuration
 	IF ((NOT cfg.checked) OR a__) THEN RETURN (CFG_NOTDONE); ENDIF
@@ -467,11 +473,16 @@ END remove_ah_
 --                     < -1 on any other error
 -- 
 --------------------------------------------------------------------------------
-ROUTINE exec_move_
+ROUTINE exec_kmove_
 VAR
-	stat__       : INTEGER
-	new_j_pos__  : JOINTPOS
+	stat__      : INTEGER
+	new_j_pos__ : JOINTPOS
+	seg_time__  : INTEGER
+	term_type__ : INTEGER
 BEGIN
+	-- assume seq nr 0 is already there
+	IF (pkt.seq_nr_ = 0) THEN RETURN (0); ENDIF
+
 	-- ROS sends radians, so convert
 	arr_rad2deg(pkt.joint_data_)
 
@@ -484,29 +495,18 @@ BEGIN
 		RETURN (MOVERR_OOR)
 	ENDIF
 
-	-- sync
-	WAIT FOR (FLG[cfg.f_msm_rdy] = ON)
+	-- calculate time for this segment in ms
+	seg_time__ = ROUND(pkt.duration_ * 1000.0)
+	-- see which termination type user wants to use
+	term_type__ = NODECEL
+	IF (cfg.use_tt_cont) THEN term_type__ = 6; ENDIF
 
-	-- setup registers
-	-- init position
-	SET_JPOS_REG(cfg.pr_move, new_j_pos__, stat__)
-	IF (stat__ <> 0) THEN RETURN (-stat__); ENDIF
+	--WITH $SPEED = MOVE_SPEED, $MOTYPE = JOINT, $TERMTYPE = NODECEL
+	WITH $SEG_TIME = seg_time__, $MOTYPE = JOINT, $TERMTYPE = term_type__
+		MOVE TO new_j_pos__ NOWAIT
 
-	-- init motion speed (from config)
-	SET_INT_REG(cfg.r_move_spd, cfg.move_speed, stat__)
-	IF (stat__ <> 0) THEN RETURN (-stat__); ENDIF
-
-	-- init motion termination (from config)
-	SET_INT_REG(cfg.r_move_cnt, cfg.move_cnt, stat__)
-	IF (stat__ <> 0) THEN RETURN (-stat__); ENDIF
-
-	-- exec
-	FLG[cfg.f_msm_drdy] = ON
-	WAIT FOR (FLG[cfg.f_msm_drdy] = OFF)
-
-	-- done
 	RETURN (0)
-END exec_move_
+END exec_kmove_
 
 
 

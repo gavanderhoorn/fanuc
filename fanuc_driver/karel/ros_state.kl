@@ -89,7 +89,7 @@ TYPE
 
 
 VAR
-	cfg_         IN SHADOW : rstate_cfg_t -- configuration
+	cfg_         IN CMOS   : rstate_cfg_t -- configuration
 
 	jnt_pkt_out_           : ind_pkt_t    -- ROS-Industrial joint state packet
 	rs_pkt_out_            : ind_rs_t     -- ROS-Industrial robot status packet
