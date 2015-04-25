@@ -10,6 +10,7 @@ SRCS=\
 	libind_pkt.kl \
 	libind_rs.kl  \
 	libssock.kl   \
+	task_run.kl   \
 	ros_relay.kl  \
 	ros_state.kl
 
