@@ -60,7 +60,7 @@ PROGRAM ros_relay
 -- 
 --------------------------------------------------------------------------------
 %ALPHABETIZE
-%COMMENT = 'r23'
+%COMMENT = 'rB_cmded_spd'
 %NOBUSYLAMP
 %NOLOCKGROUP
 %NOPAUSE = COMMAND + TPENABLE + ERROR
@@ -126,6 +126,7 @@ CONST
 	SEV_ABORT    =    2  -- ABORT severity
 
 	MOVERR_OOR   =   -1  -- Requested JPOS is out-of-range
+	MOVERR_ISS   =   -2  -- Illegal Start State: trajectories must start from current state
 
 	-- Configuration defaults
 	MOTION_TAG   =    4  -- Server tag
@@ -334,8 +335,8 @@ BEGIN
 						log_error_a(LOG_PFIX + 'exec_move err:', stat_)
 						-- can't continue, send error
 						stat_ = send_err_(pkt_in_, pkt_out_, sock_fd_)
-						-- disconnect if anything else than OOR error
-						IF (stat_ <> MOVERR_OOR) THEN
+						-- disconnect if anything else than OOR or ISS error
+						IF (stat_ <> MOVERR_OOR) AND (stat_ <> MOVERR_ISS) THEN
 							-- 
 							GOTO exit_discon
 						ENDIF
@@ -471,6 +472,8 @@ ROUTINE exec_move_
 VAR
 	stat__       : INTEGER
 	new_j_pos__  : JOINTPOS
+	curr_j_pos__ : JOINTPOS
+	seg_time__   : REAL
 BEGIN
 	-- ROS sends radians, so convert
 	arr_rad2deg(pkt.joint_data_)
@@ -478,6 +481,20 @@ BEGIN
 	-- convert reals to jointpos
 	CNV_REL_JPOS(pkt.joint_data_, new_j_pos__, stat__)
 	IF (stat__ <> 0) THEN RETURN (-stat__); ENDIF
+
+	-- check for start-of-trajectory
+	IF (pkt.seq_nr_ = 0) THEN
+		curr_j_pos__ = CURJPOS(0, 0)
+
+		IF NOT (curr_j_pos__ >=< new_j_pos__) THEN
+			-- new trajectories MUST start at current state
+			log_error(LOG_PFIX + 'illegal start state')
+			RETURN (MOVERR_ISS)
+		ENDIF
+
+		-- no need for motion, we're already there
+		RETURN (0)
+	ENDIF
 
 	-- check to make sure point can be reached before performing motion
 	IF (NOT J_IN_RANGE(new_j_pos__)) THEN
@@ -492,8 +509,9 @@ BEGIN
 	SET_JPOS_REG(cfg.pr_move, new_j_pos__, stat__)
 	IF (stat__ <> 0) THEN RETURN (-stat__); ENDIF
 
-	-- init motion speed (from config)
-	SET_INT_REG(cfg.r_move_spd, cfg.move_speed, stat__)
+	-- init commanded motion speed
+	seg_time__ = ROUND(pkt.duration_ * 1000.0)
+	SET_REAL_REG(cfg.r_move_spd, seg_time__, stat__)
 	IF (stat__ <> 0) THEN RETURN (-stat__); ENDIF
 
 	-- init motion termination (from config)
