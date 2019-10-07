@@ -27,5 +27,6 @@ catkin_package(
 )
 
 add_subdirectory(m6ib_kinematics)
+add_subdirectory(m6ib6s_kinematics)
 
 install(FILES readme.md DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

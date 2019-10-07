@@ -7,11 +7,11 @@ target_link_libraries(${IKFAST_LIBRARY_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARI
 # suppress warnings about unused variables in OpenRave's solver code
 target_compile_options(${IKFAST_LIBRARY_NAME} PRIVATE -Wno-unused-variable)
 
-install(TARGETS
-  ${IKFAST_LIBRARY_NAME}
+install(
+  TARGETS ${IKFAST_LIBRARY_NAME}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 
 install(
   FILES fanuc_m6ib6s_manipulator_moveit_ikfast_plugin_description.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/m6ib6s_kinematics
 )

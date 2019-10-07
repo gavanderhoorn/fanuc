@@ -37,6 +37,7 @@
 
   <export>
     <moveit_core plugin="${prefix}/m6ib_kinematics/fanuc_m6ib_manipulator_moveit_ikfast_plugin_description.xml"/>
+    <moveit_core plugin="${prefix}/m6ib6s_kinematics/fanuc_m6ib6s_manipulator_moveit_ikfast_plugin_description.xml"/>
     <rosindex>
       <tags>
         <tag>moveit</tag>
